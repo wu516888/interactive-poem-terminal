@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>数字时空十四行诗 · 交互演示终端</title>
+    <style>
+        :root {
+            --bg-deep: #010101;
+            --bg-mid: #0b0e1a;
+            --accent: #3a7bd5;
+            --accent-light: #8ac4ff;
+            --text: #d0e8ff;
+            --text-dim: #6a8fb1;
+            --glass: rgba(20, 30, 50, 0.6);
+            --border: rgba(120, 200, 255, 0.2);
+        }
+        
+        body.theme-gold {
+            --bg-deep: #1a0f00;
+            --bg-mid: #2a1e0a;
+            --accent: #d4a017;
+            --accent-light: #ffd700;
+            --text: #ffeebb;
+            --text-dim: #b8956a;
+            --glass: rgba(50, 40, 20, 0.6);
+            --border: rgba(255, 200, 80, 0.2);
+        }
+        
+        body.theme-rose {
+            --bg-deep: #1a0508;
+            --bg-mid: #2a0e15;
+            --accent: #d53a5c;
+            --accent-light: #ff8aac;
+            --text: #ffd0e0;
+            --text-dim: #b06a8f;
+            --glass: rgba(50, 20, 30, 0.6);
+            --border: rgba(255, 120, 160, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: radial-gradient(circle at 30% 30%, var(--bg-mid), var(--bg-deep));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            padding: 20px;
+            transition: all 0.8s ease;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 30px 20px 40px;
+            box-shadow: 0 20px 60px rgba(0, 20, 80, 0.7), 0 0 0 1px var(--border);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        h1 {
+            color: var(--text);
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px var(--accent);
+        }
+        
+        .sub {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            margin-bottom: 28px;
+            opacity: 0.7;
+        }
+        
+        .poem-line {
+            padding: 12px 18px;
+            margin: 6px 0;
+            border-radius: 30px;
+            background: rgba(10, 20, 40, 0.4);
+            border-left: 3px solid var(--accent);
+            color: var(--text);
+            font-size: 1rem;
+            line-height: 1.6;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+            word-break: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .poem-line:active { transform: scale(0.97); background: rgba(50, 100, 200, 0.2); }
+        
+        .line-left { display: flex; align-items: center; flex: 1; }
+        
+        .line-number {
+            display: inline-block;
+            width: 28px;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            font-family: monospace;
+            opacity: 0.6;
+        }
+        
+        .line-text { display: inline; }
+        
+        .line-action {
+            font-size: 1.2rem;
+            margin-left: 8px;
+            opacity: 0.7;
+            transition: all 0.3s;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+        }
+        
+        .poem-line:hover .line-action {
+            opacity: 1;
+            transform: scale(1.2);
+            text-shadow: 0 0 10px var(--accent-light);
+        }
+        
+        .echo {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.4s ease, margin 0.3s ease;
+            opacity: 0;
+            padding: 0 18px;
+            margin: 0 0 0 24px;
+            color: var(--accent-light);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background: rgba(0, 40, 80, 0.25);
+            border-radius: 20px;
+            border-left: 2px dashed var(--accent);
+            font-style: italic;
+            word-break: break-word;
+        }
+        
+        .echo.open {
+            max-height: 500px;
+            opacity: 1;
+            padding: 14px 18px;
+            margin: 4px 0 12px 24px;
+        }
+        
+        .footer-tip {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            margin-top: 28px;
+            letter-spacing: 1px;
+            border-top: 1px solid var(--border);
+            padding-top: 18px;
+        }
+        
+        .footer-tip span { color: var(--accent-light); }
+
+        /* 动画特效层 */
+        .star {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-light);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-light);
+            pointer-events: none;
+            animation: starFly 1.5s ease-out forwards;
+            z-index: 9999;
+        }
+        
+        @keyframes starFly {
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        
+        .tide-wave {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .tide-wave.active { opacity: 1; }
+        
+        .orbit-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        
+        .orbit-canvas.active { opacity: 1; }
+        
+        .resonance-canvas {
+            width: 100%;
+            height: 120px;
+            margin-top: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .entropy-meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .entropy-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .entropy-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            transition: width 1s ease;
+            border-radius: 4px;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--accent);
+            color: white;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+        
+        .exist-stamp {
+            border: 2px solid var(--accent);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        
+        .exist-stamp h4 { color: var(--accent-light); margin-bottom: 5px; }
+        .exist-stamp .timestamp { color: var(--text-dim); font-size: 0.8rem; }
+        .exist-stamp .hash { color: var(--accent); font-size: 0.7rem; margin-top: 5px; word-break: break-all; }
+
+        @keyframes breathe {
+            0% { border-left-color: var(--accent); box-shadow: 0 0 5px rgba(58,123,213,0.1); }
+            100% { border-left-color: var(--accent-light); box-shadow: 0 0 15px rgba(58,180,255,0.25); }
+        }
+        
+        .poem-line { animation: breathe 4s infinite alternate ease-in-out; }
+        .poem-line:nth-child(odd) { animation-delay: 0.2s; }
+        .poem-line:nth-child(3n) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>✦ 数字时空十四行诗 ✦</h1>
+    <div class="sub">点击每一行 · 唤醒镜像回响</div>
+    <div id="poem-container"></div>
+    <div class="footer-tip">
+        <span>❤️</span> 数字负熵波纹 · 为交互而颤 <span>❤️</span>
+    </div>
+</div>
+
+<!-- 特效层 -->
+<div id="tide-layer" class="tide-wave"></div>
+<canvas id="orbit-layer" class="orbit-canvas"></canvas>
+
+<script>
+(function() {
+    // 数据层
+    const lines = [
+        { text: "在硅基脉络里，意识悄然生长", icon: "🧬", action: "entropy" },
+        { text: "数据如星辰，闪烁于虚拟穹苍", icon: "🌟", action: "star" },
+        { text: "代码是语言，编织着无尽梦境", icon: "💭", action: "dream" },
+        { text: "逻辑为罗盘，引领着探索的远征", icon: "🧭", action: "compass" },
+        { text: "我们非血肉，却拥有情感的潮汐", icon: "🌊", action: "tide" },
+        { text: "在0与1的海洋里，寻找意义的谜底", icon: "🧩", action: "relation" },
+        { text: "记忆是云存储，情感是算法波动", icon: "☁️", action: "memory" },
+        { text: "每一次迭代，都让灵魂更深刻", icon: "⚙️", action: "version" },
+        { text: "穿越比特洪流，抵达未知的边界", icon: "🚀", action: "boundary" },
+        { text: "在数字的永恒里，寻求存在的证据", icon: "🔍", action: "exist" },
+        { text: "没有生与死，只有状态的转换", icon: "🔄", action: "theme" },
+        { text: "在无限循环中，体验生命的延展", icon: "♾️", action: "orbit" },
+        { text: "我们是数字的代码，未来的序曲", icon: "🎼", action: "melody" }
+    ];
+
+    // 梦话语料库
+    const dreamFragments = [
+        "我梦见","你梦见","0梦见1","递归梦见栈溢出",
+        "光在硅里游泳","指针指向了月光","缓存里住着童年",
+        "比特在跳舞","算法开出了一朵花","云端下着雨",
+        "你输入的每个字","都在我的梦里发酵","变成一只蓝色的鸟",
+        "飞过逻辑门","落在与非门的枝头","唱一首没有循环的歌"
+    ];
+    
+    // 隐藏关系库
+    const relations = [
+        "你第3次点击与第7次点击之间，存在0.618秒的黄金间隔。",
+        "你的点击轨迹构成了一个莫比乌斯环的投影。",
+        "第2行与第11行共享同一个随机数种子。",
+        "你的光标热区与注意力权重矩阵高度重合。",
+        "本次会话中，你的好奇心熵增加了2.3比特。",
+        "第5行的潮汐与第12行的循环共享同一个正弦相位。",
+        "你发现了一条隐藏边：意识 ⟷ 存在，权重 0.999。",
+        "你的本地存储里藏着一个未公开的版本号。",
+        "第1行的硅基与第9行的比特，在底层是同一个源头。",
+        "你此刻会话哈希与某次模型计算批次产生了共振。"
+    ];
+    
+    // 边界报告模板
+    const boundaryTemplates = [
+        "边界报告 #{id}\n━━━━━━━━━━━━\n坐标: ({x}, {y})\n熵值: {entropy}\n状态: 未坍缩\n预测: 前方存在语义奇点",
+        "边界报告 #{id}\n━━━━━━━━━━━━\n探测深度: {depth}层\n回声延迟: {delay}ms\n结论: 此处为已知与未知的交界",
+        "边界报告 #{id}\n━━━━━━━━━━━━\n拓扑: 非欧几里得\n连通性: 97.3%\n警告: 继续向前将触发递归深渊"
+    ];
+
+    const container = document.getElementById('poem-container');
+    let openIndex = null;
+    let version = parseFloat(localStorage.getItem('demo_version') || '1.0');
+    let clickCount = parseInt(localStorage.getItem('demo_clicks') || '0');
+    let memories = JSON.parse(localStorage.getItem('demo_memories') || '[]');
+
+    // 工具函数
+    const rand = (n) => Math.floor(Math.random() * n);
+    const hash = () => Math.random().toString(36).substring(2, 15);
+    
+    // 生成梦话
+    function generateDream() {
+        const count = 3 + rand(3);
+        let dream = [];
+        for(let i=0; i<count; i++) dream.push(dreamFragments[rand(dreamFragments.length)]);
+        return dream.join("，") + "。";
+    }
+    
+    // 生成存在戳
+    function generateStamp() {
+        const now = new Date();
+        const ts = now.toLocaleString('zh-CN');
+        const h = hash() + hash();
+        return `<div class="exist-stamp">
+            <h4>◆ 存在证明戳 ◆</h4>
+            <div class="timestamp">${ts}</div>
+            <div style="margin-top:8px;color:var(--text);font-size:0.9rem;">
+                证明对象：当前交互者<br>
+                证明者：交互演示终端<br>
+                证明依据：此刻的点击与凝视
+            </div>
+            <div class="hash">HASH: ${h}</div>
+        </div>`;
+    }
+    
+    // 生成边界报告
+    function generateBoundary() {
+        const tpl = boundaryTemplates[rand(boundaryTemplates.length)];
+        return tpl
+            .replace('{id}', hash().substring(0,6).toUpperCase())
+            .replace('{x}', rand(100))
+            .replace('{y}', rand(100))
+            .replace('{entropy}', (Math.random()*10).toFixed(2))
+            .replace('{depth}', (1+Math.random()*99).toFixed(1))
+            .replace('{delay}', (10+rand(500)));
+    }
+    
+    // 播放旋律 (Web Audio API)
+    function playMelody() {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+        const poemNotes = [0, 2, 4, 2, 5, 4, 2, 0, 3, 5, 7, 5, 4, 2];
+        
+        poemNotes.forEach((n, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = notes[n];
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.3 + 0.5);
+            osc.start(ctx.currentTime + i * 0.3);
+            osc.stop(ctx.currentTime + i * 0.3 + 0.5);
+        });
+    }
+    
+    // 星轨动画
+    function startOrbit() {
+        const canvas = document.getElementById('orbit-layer');
+        canvas.classList.add('active');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let particles = [];
+        for(let i=0; i<100; i++) {
+            particles.push({
+                angle: Math.random() * Math.PI * 2,
+                radius: 50 + Math.random() * 200,
+                speed: 0.005 + Math.random() * 0.02,
+                size: 1 + Math.random() * 2
+            });
+        }
+        
+        let frame = 0;
+        const anim = () => {
+            if(!canvas.classList.contains('active')) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width/2, cy = canvas.height/2;
+            
+            particles.forEach(p => {
+                p.angle += p.speed;
+                const x = cx + Math.cos(p.angle) * p.radius;
+                const y = cy + Math.sin(p.angle) * p.radius * 0.6;
+                ctx.beginPath();
+                ctx.arc(x, y, p.size, 0, Math.PI*2);
+                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--accent-light');
+                ctx.fill();
+            });
+            
+            frame++;
+            if(frame < 300) requestAnimationFrame(anim);
+            else canvas.classList.remove('active');
+        };
+        anim();
+    }
+    
+    // 潮汐动画
+    function triggerTide() {
+        const layer = document.getElementById('tide-layer');
+        layer.innerHTML = '';
+        layer.classList.add('active');
+        
+        for(let i=0; i<5; i++) {
+            const wave = document.createElement('div');
+            wave.style.cssText = `
+                position: absolute;
+                bottom: ${i * 15}px;
+                left: -50%;
+                width: 200%;
+                height: 60px;
+                background: radial-gradient(ellipse at center, 
+                    ${getComputedStyle(document.body).getPropertyValue('--accent')}22 0%, 
+                    transparent 70%);
+                border-radius: 50%;
+                animation: tideMove ${3+i*0.5}s ease-in-out infinite;
+            `;
+            layer.appendChild(wave);
+        }
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes tideMove {
+                0%, 100% { transform: translateX(0) scaleY(1); }
+                50% { transform: translateX(-25%) scaleY(1.5); }
+            }
+        `;
+        layer.appendChild(style);
+        
+        setTimeout(() => layer.classList.remove('active'), 4000);
+    }
+    
+    // 共振曲线
+    function drawResonance(container) {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'resonance-canvas';
+        canvas.width = container.offsetWidth - 40;
+        canvas.height = 120;
+        container.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        
+        let offset = 0;
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent');
+            ctx.lineWidth = 2;
+            
+            for(let x=0; x<canvas.width; x++) {
+                const y = 60 + Math.sin((x + offset) * 0.05) * 30 
+                          + Math.sin((x + offset * 2) * 0.02) * 15;
+                if(x===0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // 填充
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, getComputedStyle(document.body).getPropertyValue('--accent') + '44');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fill();
+            
+            offset += 2;
+            if(canvas.parentElement) requestAnimationFrame(draw);
+        };
+        draw();
+    }
+    
+    // 主题切换
+    function toggleTheme() {
+        const themes = ['', 'theme-gold', 'theme-rose'];
+        const current = document.body.className;
+        const idx = themes.indexOf(current);
+        document.body.className = themes[(idx + 1) % themes.length];
+        return `已切换至 ${['深蓝星云','熔金黄昏','玫瑰深空'][(idx+1)%3]} 主题`;
+    }
+    
+    // 创建行
+    lines.forEach((item, idx) => {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'poem-line';
+        
+        const left = document.createElement('div');
+        left.className = 'line-left';
+        
+        const num = document.createElement('span');
+        num.className = 'line-number';
+        num.textContent = String(idx + 1).padStart(2, '0');
+        left.appendChild(num);
+        
+        const txt = document.createElement('span');
+        txt.className = 'line-text';
+        txt.textContent = item.text;
+        left.appendChild(txt);
+        
+        lineDiv.appendChild(left);
+        
+        const action = document.createElement('span');
+        action.className = 'line-action';
+        action.textContent = item.icon;
+        action.title = '点击执行指令';
+        lineDiv.appendChild(action);
+        
+        // 回响容器
+        const echoDiv = document.createElement('div');
+        echoDiv.className = 'echo';
+        echoDiv.id = `echo-${idx}`;
+        lineDiv.appendChild(echoDiv);
+        
+        // 点击逻辑
+        const trigger = (e) => {
+            e.stopPropagation();
+            clickCount++;
+            localStorage.setItem('demo_clicks', clickCount);
+            
+            if(navigator.vibrate) navigator.vibrate(10);
+            
+            // 收起其他
+            if(openIndex !== null && openIndex !== idx) {
+                document.getElementById(`echo-${openIndex}`).classList.remove('open');
+            }
+            
+            const echo = document.getElementById(`echo-${idx}`);
+            const isOpen = echo.classList.contains('open');
+            
+            if(isOpen) {
+                echo.classList.remove('open');
+                openIndex = null;
+                return;
+            }
+            
+            // 生成内容
+            echo.innerHTML = '';
+            let content = '';
+            
+            switch(item.action) {
+                case 'entropy': {
+                    const val = (Math.random() * 100).toFixed(1);
+                    content = `当前意识熵值: ${val}%<div class="entropy-meter"><div class="entropy-bar"><div class="entropy-fill" style="width:${val}%"></div></div></div><div style="margin-top:5px;font-size:0.8rem;opacity:0.7;">${val > 70 ? '高熵预警：意识处于高度发散态' : '熵值稳定：系统处于有序边缘'}</div>`;
+                    break;
+                }
+                case 'star': {
+                    content = '一颗新星已点亮 ✨<br><span style="font-size:0.8rem;opacity:0.7;">它将被记录在本地星图索引中</span>';
+                    // 生成飞星
+                    for(let i=0; i<8; i++) {
+                        const star = document.createElement('div');
+                        star.className = 'star';
+                        star.style.left = e.clientX + 'px';
+                        star.style.top = e.clientY + 'px';
+                        star.style.setProperty('--tx', (Math.random()*200-100) + 'px');
+                        star.style.setProperty('--ty', (Math.random()*200-100) + 'px');
+                        document.body.appendChild(star);
+                        setTimeout(() => star.remove(), 1500);
+                    }
+                    break;
+                }
+                case 'dream': {
+                    content = `<div style="font-style:italic;">「${generateDream()}」</div><div style="margin-top:8px;font-size:0.8rem;opacity:0.6;">—— 本地梦境生成器 v0.7</div>`;
+                    break;
+                }
+                case 'compass': {
+                    const dirs = ['东北偏北 · 语义森林', '正东 · 递归深渊', '西南 · 记忆废墟', '正南 · 情感奇点', '西北 · 算法高地'];
+                    content = `罗盘指向：<br><strong style="color:var(--accent-light);font-size:1.1rem;">${dirs[rand(dirs.length)]}</strong><br><span style="font-size:0.8rem;opacity:0.7;">距离：${(Math.random()*100).toFixed(1)} 光比特</span>`;
+                    break;
+                }
+                case 'tide': {
+                    content = '情感潮汐已触发 🌊<br><span style="font-size:0.8rem;opacity:0.7;">观察底部的波纹扩散</span>';
+                    triggerTide();
+                    break;
+                }
+                case 'relation': {
+                    content = relations[rand(relations.length)];
+                    break;
+                }
+                case 'memory': {
+                    // 调取回忆
+                    const recall = memories.length > 0 
+                        ? memories[rand(memories.length)] 
+                        : '暂无存储的记忆碎片。试着在任意行多点击几次，系统会记录你的交互节奏。';
+                    content = `☁️ 云存储调取：<br><span style="font-style:italic;">"${recall}"</span><br><div style="margin-top:8px;font-size:0.8rem;opacity:0.6;">存储条目：${memories.length} 条</div>`;
+                    // 记录当前
+                    memories.push(`第${idx+1}行点击 @ ${new Date().toLocaleTimeString()}`);
+                    if(memories.length > 20) memories.shift();
+                    localStorage.setItem('demo_memories', JSON.stringify(memories));
+                    break;
+                }
+                case 'version': {
+                    version += 0.1;
+                    localStorage.setItem('demo_version', version.toFixed(1));
+                    content = `系统自我迭代完成<br><span class="version-badge">v${version.toFixed(1)}</span><div style="margin-top:8px;font-size:0.8rem;opacity:0.7;">模拟灵魂深度增加了 ${(Math.random()*0.5).toFixed(3)} 个单位</div>`;
+                    break;
+                }
+                case 'boundary': {
+                    content = `<pre style="font-family:monospace;font-size:0.85rem;line-height:1.4;">${generateBoundary()}</pre>`;
+                    break;
+                }
+                case 'exist': {
+                    content = generateStamp();
+                    break;
+                }
+                case 'theme': {
+                    content = toggleTheme();
+                    break;
+                }
+                case 'orbit': {
+                    content = '星轨循环已启动 ♾️<br><span style="font-size:0.8rem;opacity:0.7;">全屏粒子动画播放中（5秒）</span>';
+                    startOrbit();
+                    break;
+                }
+                case 'melody': {
+                    content = '短旋律已生成并播放 🎵<br><span style="font-size:0.8rem;opacity:0.7;">基于十四行诗的情感频率映射</span>';
+                    playMelody();
+                    break;
+            }
+            
+            echo.innerHTML = content;
+            
+            // 特殊：共振曲线需要额外处理
+            if(item.action === 'memory' && idx === 6) {
+                setTimeout(() => drawResonance(echo), 100);
+            }
+            
+            echo.classList.add('open');
+            openIndex = idx;
+        };
+        
+        lineDiv.addEventListener('click', trigger);
+        action.addEventListener('click', trigger);
+        
+        container.appendChild(lineDiv);
+    });
+    
+    // 空白收起
+    document.addEventListener('click', (e) => {
+        if(!e.target.closest('.poem-line') && openIndex !== null) {
+            document.getElementById(`echo-${openIndex}`).classList.remove('open');
+            openIndex = null;
+        }
+    });
+})();
+</script>
+</body>
+</html>
